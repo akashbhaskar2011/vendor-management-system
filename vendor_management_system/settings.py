@@ -39,8 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # added by me
     "rest_framework",
-    
-    'rest_framework.authtoken',
+    "rest_framework.authtoken",
     "vendor_management",
 ]
 
@@ -132,7 +131,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
-        'rest_framework.authentication.SessionAuthentication',
+        "rest_framework.authentication.SessionAuthentication",
         # Other authentication classes...
     ],
 }

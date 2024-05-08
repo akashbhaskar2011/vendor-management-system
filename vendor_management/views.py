@@ -1,8 +1,8 @@
 from rest_framework import generics
-from .models import Vendor, PurchaseOrder ,HistoricalPerformance
+from .models import Vendor, PurchaseOrder, HistoricalPerformance
 from .serializers import VendorSerializer, PurchaseOrderSerializer
 from django.utils import timezone
-from django.db.models import F, ExpressionWrapper, fields
+from django.db.models import F, fields
 from django.db.models import Avg
 
 
@@ -14,19 +14,16 @@ from django.dispatch import receiver
 from django.contrib.auth import authenticate
 
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication,SessionAuthentication
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-
-
-
+from rest_framework.decorators import api_view
 
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Vendor, HistoricalPerformance
-from .serializers import HistoricalPerformanceSerializer
+
 
 class VendorPerformanceAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -53,7 +50,6 @@ def acknowledge_purchase_order(request, po_id):
         purchase_order.acknowledgment_date = timezone.now()
         purchase_order.save()
 
-        # Trigger recalculation of average_response_time
         vendor = purchase_order.vendor
         performance_metrics = calculate_vendor_performance_matrics(vendor)
         vendor.average_response_time = performance_metrics["average_response_time"]
@@ -64,20 +60,20 @@ def acknowledge_purchase_order(request, po_id):
         return Response({"error": "Purchase order not found"}, status=404)
 
 
-
-
 @api_view(["POST"])
 def generate_token(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
+    username = request.data.get("username")
+    password = request.data.get("password")
 
     if username is None or password is None:
-        return Response({'error': 'Please provide both username and password'}, status=400)
+        return Response(
+            {"error": "Please provide both username and password"}, status=400
+        )
 
     user = authenticate(username=username, password=password)
 
     if not user:
-        return Response({'error': 'Invalid username or password'}, status=400)
+        return Response({"error": "Invalid username or password"}, status=400)
 
     token, created = Token.objects.get_or_create(user=user)
     return Response({"token": token.key})
@@ -111,7 +107,7 @@ class PurchaseOrderRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAP
     authentication_classes = [TokenAuthentication, SessionAuthentication]
 
 
-# extra funtion to check the puchases done by vendor
+
 class PurchaseOrdersByVendorAPIView(generics.ListAPIView):
     serializer_class = PurchaseOrderSerializer
     permission_classes = [IsAuthenticated]
@@ -138,26 +134,31 @@ def calculate_vendor_performance_matrics(vendor):
     # for calculating qual rating
     quality_rating_sum = 0
     total_completed_orders = 0
-    quality_rating_avg=0
+    quality_rating_avg = 0
 
     for order in completed_orders:
         if order.quality_rating is not None:
             quality_rating_sum += order.quality_rating
             total_completed_orders += 1
         quality_rating_avg = (
-        quality_rating_sum / total_completed_orders if total_completed_orders > 0 else 0
-    )
+            quality_rating_sum / total_completed_orders
+            if total_completed_orders > 0
+            else 0
+        )
 
     # to check this once again
     # calculate avg response time
     acknowledged_orders = completed_orders.exclude(acknowledgment_date__isnull=True)
     total_acknowledged_orders = acknowledged_orders.count()
-    average_response_time = acknowledged_orders.aggregate(
-    mean_response_time=Avg(
-        F("acknowledgment_date") - F("issue_date"),
-        output_field=fields.FloatField()
+    average_response_time = (
+        acknowledged_orders.aggregate(
+            mean_response_time=Avg(
+                F("acknowledgment_date") - F("issue_date"),
+                output_field=fields.FloatField(),
+            )
+        )["mean_response_time"]
+        or 0
     )
-    )["mean_response_time"] or 0
 
     # calculating fulfillment rate
     fulfilled_orders = completed_orders.exclude(issue_date__isnull=True).count()
@@ -166,7 +167,6 @@ def calculate_vendor_performance_matrics(vendor):
         if total_completed_orders > 0
         else 0
     )
-
 
     historical_performance = HistoricalPerformance(
         vendor=vendor,
@@ -196,7 +196,3 @@ def update_vendor_performance(sender, instance, created, **kwargs):
         vendor.average_response_time = performance_metrics["average_response_time"]
         vendor.fulfillment_rate = performance_metrics["fullfilment_rate"]
         vendor.save()
-
-
-
-

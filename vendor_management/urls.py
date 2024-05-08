@@ -5,7 +5,9 @@ from .views import (
     PurchaseOrderListCreateApiView,
     VendorRetrieveUpdateDestroyAPIView,
     PurchaseOrderRetrieveUpdateDestroyAPIView,
-    PurchaseOrdersByVendorAPIView,acknowledge_purchase_order,VendorPerformanceAPIView,
+    PurchaseOrdersByVendorAPIView,
+    acknowledge_purchase_order,
+    VendorPerformanceAPIView,
     generate_token,
 )
 
@@ -33,10 +35,14 @@ urlpatterns = [
         PurchaseOrdersByVendorAPIView.as_view(),
         name="purchase-orders-by-vendor",
     ),
-
-      path("api/vendors/<int:vendor_id>/performance/", VendorPerformanceAPIView.as_view(), name="vendor-performance")
-      ,
-       path("api/purchase_orders/<int:po_id>/acknowledge/", acknowledge_purchase_order, name="acknowledge-purchase-order"),
-
-
+    path(
+        "api/vendors/<int:vendor_id>/performance/",
+        VendorPerformanceAPIView.as_view(),
+        name="vendor-performance",
+    ),
+    path(
+        "api/purchase_orders/<int:po_id>/acknowledge/",
+        acknowledge_purchase_order,
+        name="acknowledge-purchase-order",
+    ),
 ]
